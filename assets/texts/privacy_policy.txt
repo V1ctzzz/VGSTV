@@ -1,0 +1,35 @@
+Política de Privacidade para VGSTV Play
+Na VGSTV Play, uma das nossas principais prioridades é a privacidade dos nossos visitantes. Este documento de Política de Privacidade contém tipos de informações que são coletadas e registradas pela VGSTV Play e como as usamos.
+
+Caso tenha dúvidas adicionais ou precise de mais informações sobre nossa Política de Privacidade, não hesite em entrar em contato conosco.
+
+Arquivos de Log
+O VGSTV Play segue um procedimento padrão de uso de arquivos de log. Esses arquivos registram os visitantes quando eles usam o aplicativo. As informações coletadas pelos arquivos de log incluem endereços de protocolo de internet (IP), tipo de navegador, Provedor de Serviços de Internet (ISP), carimbo de data e hora, páginas de referência/saída e possivelmente o número de cliques. Eles não estão vinculados a nenhuma informação pessoalmente identificável. O objetivo das informações é analisar tendências, administrar o aplicativo, rastrear o movimento dos usuários no aplicativo e coletar informações demográficas.
+
+Nossos parceiros de publicidade
+Alguns anunciantes em nosso aplicativo podem usar cookies e web beacons. Nossos parceiros de publicidade estão listados abaixo. Cada um de nossos parceiros de publicidade tem sua própria Política de Privacidade para suas políticas sobre dados do usuário. Para facilitar o acesso, criamos um hiperlink para suas Políticas de Privacidade abaixo.
+
+Google
+https://policies.google.com/technologies/ads
+
+Políticas de Privacidade
+Você pode consultar esta lista para encontrar a Política de Privacidade de cada um dos parceiros de publicidade do VGSTV Play.
+
+Servidores de anúncios de terceiros ou redes de anúncios usam tecnologias como cookies, JavaScript ou Beacons que são usados em seus respectivos anúncios e links que aparecem no VGSTV Play. Eles recebem automaticamente seu endereço IP quando isso ocorre. Essas tecnologias são usadas para medir a eficácia de suas campanhas publicitárias e/ou para personalizar o conteúdo publicitário que você vê neste aplicativo ou em outros aplicativos ou sites.
+
+Observe que o VGSTV Play não tem acesso nem controle sobre esses cookies usados por anunciantes terceirizados.
+
+Políticas de privacidade de terceiros
+A Política de Privacidade da VGSTV Play não se aplica a outros anunciantes ou sites. Portanto, aconselhamos que você consulte as respectivas Políticas de Privacidade desses servidores de anúncios de terceiros para obter informações mais detalhadas. Elas podem incluir suas práticas e instruções sobre como optar por não participar de certas opções.
+
+Informações para crianças
+Outra parte da nossa prioridade é adicionar proteção para crianças enquanto usam a internet. Incentivamos pais e responsáveis a observar, participar e/ou monitorar e orientar suas atividades online.
+
+O VGSTV Play não coleta intencionalmente nenhuma Informação Pessoal Identificável de crianças menores de 13 anos. Se você acha que seu filho forneceu esse tipo de informação em nosso aplicativo, recomendamos fortemente que entre em contato conosco imediatamente e faremos o possível para remover prontamente essas informações de nossos registros.
+
+Política de Privacidade Online Somente
+Esta Política de Privacidade se aplica somente às nossas atividades online e é válida para visitantes do nosso App com relação às informações que eles compartilharam e/ou coletaram no VGSTV Play. Esta política não se aplica a nenhuma informação coletada offline ou por meio de canais que não sejam este app
+
+Consentimento
+Ao usar nosso aplicativo, você concorda com nossa Política de Privacidade e com seus Termos e Condições.
+

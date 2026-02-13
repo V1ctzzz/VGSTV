@@ -1,0 +1,19 @@
+INSTRUÇÕES PARA GERAR O ARQUIVO DE UPGRADE DA CHAVE
+
+O PEPK requer execução interativa. Execute os seguintes comandos manualmente:
+
+1. Abra o PowerShell ou CMD na pasta: C:\Users\victo\Desktop\app radio\vgs\android\app
+
+2. Execute o comando:
+   java -jar pepk.jar --keystore=upload-keystore.jks --alias=upload --output=upload-key-encrypted.zip --signing-keystore=upload-keystore.jks --signing-key-alias=upload --rsa-aes-encryption --encryption-key-path=encryption_public_key.pem
+
+3. Quando solicitado, digite as senhas:
+   - Store password: glenn123
+   - Key password: glenn123
+   - Signing store password: glenn123
+   - Signing key password: glenn123
+
+4. O arquivo upload-key-encrypted.zip será gerado na mesma pasta.
+
+5. Faça upload deste arquivo no Google Play Console na seção de upgrade da chave de assinatura.
+

@@ -1,0 +1,90 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id "dev.flutter.flutter-gradle-plugin"
+    id "com.google.gms.google-services"
+    // id 'com.google.gms.google-services' version '4.3.15' apply false
+}
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader("UTF-8") { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
+if (flutterVersionCode == null) {
+    flutterVersionCode = "1"
+}
+
+def flutterVersionName = localProperties.getProperty("flutter.versionName")
+if (flutterVersionName == null) {
+    flutterVersionName = "1.0"
+}
+
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {
+    namespace = "com.vgstv.radioapp"
+    compileSdk = 35
+    ndkVersion = "27.0.12077973"
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        applicationId = "com.vgstv.radioapp"
+        // You can update the following values to match your application needs.
+        // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
+        minSdk = 30//flutter.minSdkVersion
+        targetSdk = 35
+        versionCode = 8 //flutterVersionCode.toInteger()
+        versionName = flutterVersionName
+    }
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias = keystoreProperties['keyAlias']
+                keyPassword = keystoreProperties['keyPassword']
+                def keystoreFile = keystoreProperties['storeFile']
+                if (keystoreFile != null) {
+                    storeFile = file(keystoreFile)
+                    storePassword = keystoreProperties['storePassword']
+                }
+            }
+        }
+    }
+    buildTypes {
+        release {
+            // Se o keystore existir, usa assinatura de release, senão usa debug
+            if (keystorePropertiesFile.exists() && keystoreProperties['storeFile'] != null) {
+                def keystoreFile = file(keystoreProperties['storeFile'])
+                if (keystoreFile.exists()) {
+                    signingConfig = signingConfigs.release
+                } else {
+                    signingConfig = signingConfigs.debug
+                }
+            } else {
+                signingConfig = signingConfigs.debug
+            }
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}

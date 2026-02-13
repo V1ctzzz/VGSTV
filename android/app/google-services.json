@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "64541701192",
+    "project_id": "android-vgstv-play",
+    "storage_bucket": "android-vgstv-play.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:64541701192:android:43928c85bfedfab0b7d47d",
+        "android_client_info": {
+          "package_name": "com.vgstv.radioapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGpdLlQOKdet05kK1_-yllQpB6IkENDgM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      },
+      "admob_app_id": "ca-app-pub-2669869859107155~4108373884"
+    }
+  ],
+  "configuration_version": "1"
+}
