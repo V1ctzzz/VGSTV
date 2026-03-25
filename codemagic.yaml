@@ -24,12 +24,13 @@ workflows:
           pod install
           cd ..
 
-      - name: Set up code signing
+      - name: Apply provisioning profiles
         script: |
-          xcode-project use-profiles --workspace ios/Runner.xcworkspace
+          xcode-project use-profiles --project ios/Runner.xcodeproj
 
       - name: Build IPA
-        script: flutter build ipa --release
+        script: |
+          flutter build ipa --release --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
