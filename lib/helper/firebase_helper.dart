@@ -11,17 +11,31 @@ class FirebaseHelper {
   FirebaseHelper();
 
   Future<void> init() async {
-    app = await Firebase.initializeApp(
-        options: const FirebaseOptions(
+    try {
+      // iOS deve usar configuração nativa via GoogleService-Info.plist.
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        app = await Firebase.initializeApp();
+      } else {
+        app = await Firebase.initializeApp(
+          options: const FirebaseOptions(
             apiKey:
                 'AIzaSyAGpdLlQOKdet05kK1_-yllQpB6IkENDgM', //'AIzaSyC5hJ_D8Z88tbQuUBuoNiquDMp6cns9myk',
             appId:
                 '1:64541701192:android:43928c85bfedfab0b7d47d', //'1:203886889190:android:187be44d128a5150f35327',
             messagingSenderId: '8602189615',
-            projectId: 'vgstv-play'));
-    analytics = FirebaseAnalytics.instance;
-    if (kDebugMode) {
-      print('FirebaseHelper inicializado');
+            projectId: 'vgstv-play',
+          ),
+        );
+      }
+
+      analytics = FirebaseAnalytics.instance;
+      if (kDebugMode) {
+        print('FirebaseHelper inicializado');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Falha ao inicializar Firebase: $e');
+      }
     }
   }
 

@@ -9,8 +9,17 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   radioController = RadioController();
   firebaseHelper = FirebaseHelper();
-  await firebaseHelper?.init();
-  await MobileAds.instance.initialize();
+  try {
+    await firebaseHelper?.init();
+  } catch (e) {
+    debugPrint('Falha ao inicializar Firebase: $e');
+  }
+
+  try {
+    await MobileAds.instance.initialize();
+  } catch (e) {
+    debugPrint('Falha ao inicializar Mobile Ads: $e');
+  }
 
   runApp(const MainApp());
 }

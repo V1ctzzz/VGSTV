@@ -118,6 +118,20 @@ O `Info.plist` já está configurado, mas se precisar de permissões adicionais:
 - [ ] Configurar ícones e splash screen
 - [ ] Testar em diferentes versões do iOS (12.0+)
 
+## 🛠️ Diagnóstico Rápido (quando "não abre")
+
+1. Verificar se existe `ios/Runner/GoogleService-Info.plist`
+2. Confirmar chave do AdMob no `ios/Runner/Info.plist`:
+   - `GADApplicationIdentifier`
+3. Rodar limpeza de build:
+   - `flutter clean`
+   - `flutter pub get`
+4. Reinstalar pods (em macOS):
+   - `cd ios && pod install --repo-update`
+5. Testar novamente em dispositivo físico iOS
+
+> Observação: se Firebase/Ads falharem, o app deve continuar abrindo e registrar o erro no log de debug.
+
 ## 🚀 Conclusão
 
 **TODAS as mudanças que fizemos funcionam perfeitamente no iOS/iPhone!**
