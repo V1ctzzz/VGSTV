@@ -31,6 +31,9 @@ class _RadioPageState extends State<RadioPage> {
   Timer? _songTimer;
   final Dio _dio = Dio();
 
+  /// Igual ao `currentTrack` no player web: evita refetch iTunes se o texto não mudou.
+  String? _lastNowPlayingRaw;
+
   void _listenStreamMetadata() {
     _metadataSub?.cancel();
     _metadataSub = RadioPlayer.metadataStream.listen(
@@ -168,8 +171,13 @@ class _RadioPageState extends State<RadioPage> {
           continue;
         }
 
+        if (raw == _lastNowPlayingRaw) {
+          return;
+        }
+
         if (_isInvalidNowPlayingMessage(raw)) {
           if (!mounted) return;
+          _lastNowPlayingRaw = raw;
           setState(() {
             _currentSong = raw;
             _currentArtist = '';
@@ -179,6 +187,8 @@ class _RadioPageState extends State<RadioPage> {
           _updateNotification();
           return;
         }
+
+        _lastNowPlayingRaw = raw;
 
         final cleaned = _cleanSongName(raw);
         String? artist;
