@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:radio_player/radio_player.dart';
 // import 'package:vgs/controllers/old_radio_controller.dart';
 import 'package:vgs/configs/http_client_config.dart';
+import 'package:vgs/configs/radio_config.dart';
 import 'package:vgs/controllers/radio_controller.dart';
 import 'package:vgs/widgets/bannerad_widget.dart';
 import 'package:vgs/widgets/navbar.dart';
@@ -99,11 +100,20 @@ class _RadioPageState extends State<RadioPage> {
   }
 
   void _startSongTimer() {
-    _songTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+    _songTimer = Timer.periodic(RadioConfig.nowPlayingPollInterval, (timer) {
       if (_isPlaying) {
         _fetchCurrentSong();
       }
     });
+  }
+
+  /// Igual ao iTune.js: `data.replace(/<[^>]*>/g, '').trim()`.
+  String _stripHtmlTags(String s) {
+    return s.replaceAll(RegExp(r'<[^>]*>'), '').trim();
+  }
+
+  bool _isInvalidNowPlayingMessage(String s) {
+    return s == 'Música não identificada' || s == 'Música não disponível';
   }
 
   // Limpa o nome da música removendo informações extras
@@ -129,75 +139,91 @@ class _RadioPageState extends State<RadioPage> {
 
   Future<void> _fetchCurrentSong() async {
     if (!mounted) return;
-    
-    try {
-      final response = await _dio.get(
-        'https://stm50.srvstm.com:11828/currentsong?sid=1',
-        options: Options(
-          responseType: ResponseType.plain,
-          receiveTimeout: const Duration(seconds: 5),
-        ),
-      );
-      
-      if (response.statusCode == 200 && response.data != null) {
-        String songName = response.data.toString().trim();
-        if (songName.isEmpty) {
-          if (mounted && _currentSong == 'Carregando...') {
-            setState(() {
-              _currentSong = 'Sem informação';
-            });
-          }
+
+    final endpoints = <String>[];
+    final meta = RadioConfig.metadataPhpUrl.trim();
+    if (meta.isNotEmpty) {
+      endpoints.add(meta);
+    }
+    endpoints.add(RadioConfig.nowPlayingFallbackUrl);
+
+    Object? lastError;
+    for (final url in endpoints) {
+      try {
+        final response = await _dio.get<String>(
+          url,
+          options: Options(
+            responseType: ResponseType.plain,
+            receiveTimeout: const Duration(seconds: 12),
+          ),
+        );
+
+        if (response.statusCode != 200 || response.data == null) {
+          continue;
+        }
+
+        // Fluxo iTune.js: strip HTML + trim; o texto bruto vai ao iTunes (fetchCoverFromiTunes(data)).
+        final raw = _stripHtmlTags(response.data!);
+        if (raw.isEmpty) {
+          continue;
+        }
+
+        if (_isInvalidNowPlayingMessage(raw)) {
+          if (!mounted) return;
+          setState(() {
+            _currentSong = raw;
+            _currentArtist = '';
+            _albumArtUrl = null;
+            _streamArtworkBytes = null;
+          });
+          _updateNotification();
           return;
         }
-        // Limpa o nome da música antes de exibir
-        final cleanedSongName = _cleanSongName(songName);
 
-        // Tenta separar artista e música se vier no formato "Artista - Música"
+        final cleaned = _cleanSongName(raw);
         String? artist;
         String? track;
-        if (cleanedSongName.contains(' - ')) {
-          final parts = cleanedSongName.split(' - ');
+        if (cleaned.contains(' - ')) {
+          final parts = cleaned.split(' - ');
           if (parts.length >= 2) {
             artist = parts[0].trim();
             track = parts.sublist(1).join(' - ').trim();
           }
         }
 
-        // Sempre atualiza e busca capa quando a música muda
-        if (mounted) {
-          final previousSong = _currentSong;
-          setState(() {
-            // Se conseguiu separar, usa o nome da música separado
-            // Caso contrário, usa o nome completo como música
-            _currentSong = track ?? cleanedSongName;
-            _currentArtist = artist ?? '';
-          });
-          // Buscar capa do álbum sempre que a música mudar ou na primeira vez
-          print('🎶 Música original: $songName');
-          print('🎶 Música limpa: $cleanedSongName (anterior: $previousSong)');
-          print('🎤 Artista separado: $artist');
-          print('🎵 Música separada: $track');
-          print('🖼️ Capa atual: $_albumArtUrl');
-          if (previousSong != (track ?? cleanedSongName) || _albumArtUrl == null) {
-            print('🔄 Buscando nova capa...');
-            // Atualiza a notificação imediatamente com os dados disponíveis
-            _updateNotification();
-            // Usa o nome limpo para buscar a capa (pode incluir artista)
-            _fetchAlbumArt(cleanedSongName);
-          } else {
-            print('⏭️ Mantendo capa atual');
-            // Atualiza a notificação mesmo se a música não mudou (caso os dados do iTunes tenham mudado)
-            _updateNotification();
-          }
-        }
-      }
-    } catch (e) {
-      // Se houver erro, mantém a música anterior ou mostra mensagem
-      if (mounted && _currentSong == 'Carregando...') {
+        if (!mounted) return;
+        final displayTitle = track ?? cleaned;
+        final displayArtist = artist ?? '';
+        final previousLine = _currentSong;
+
         setState(() {
-          _currentSong = 'Sem informação';
+          _currentSong = displayTitle;
+          _currentArtist = displayArtist;
         });
+
+        if (previousLine != displayTitle || (_albumArtUrl == null && _streamArtworkBytes == null)) {
+          _updateNotification();
+          // Mesmo termo de pesquisa que no iTune.js: string completa após remover HTML.
+          _fetchAlbumArt(raw);
+        } else {
+          _updateNotification();
+        }
+        return;
+      } catch (e) {
+        lastError = e;
+        continue;
       }
+    }
+
+    if (!mounted) return;
+    if (_currentSong == 'Carregando...') {
+      setState(() {
+        _currentSong = 'Música não disponível';
+        _currentArtist = '';
+      });
+    }
+    if (lastError != null) {
+      debugPrint('_fetchCurrentSong: todos os endpoints falharam: $lastError');
     }
   }
 
@@ -277,21 +303,7 @@ class _RadioPageState extends State<RadioPage> {
           
           if (result is Map<String, dynamic>) {
             print('🎨 ArtworkUrl100: ${result['artworkUrl100']}');
-            print('🎤 Artista: ${result['artistName']}');
-            print('🎵 Música: ${result['trackName']}');
-            
-            // Atualizar artista e música se disponíveis
-            if (mounted) {
-              setState(() {
-                if (result['artistName'] != null) {
-                  _currentArtist = result['artistName'].toString();
-                }
-                if (result['trackName'] != null && result['trackName'].toString().isNotEmpty) {
-                  _currentSong = result['trackName'].toString();
-                }
-              });
-            }
-            
+            // iTune.js só altera a capa; título vem sempre do metadata.php/currentsong.
             // Pegar artworkUrl100 e substituir "100x100" por "300x300" (igual ao iTune.js)
             if (result['artworkUrl100'] != null) {
               String artwork = result['artworkUrl100'].toString();

@@ -15,7 +15,7 @@
 
 ### 3. **Páginas e Funcionalidades**
 - ✅ **HomePage**: Funciona perfeitamente, botões responsivos
-- ✅ **RadioPage**: Capa do álbum, player de rádio, busca iTunes API
+- ✅ **RadioPage**: Capa do álbum, player de rádio, busca iTunes API (fluxo alinhado ao `iTune.js`: strip HTML, mensagens “Música não identificada” / “Música não disponível”, polling 10 s; ver `RadioConfig.metadataPhpUrl`)
 - ✅ **TvPage**: Player de vídeo (Chewie funciona no iOS)
 - ✅ **VideosPage**: YouTube player
 - ✅ **Navbar/Drawer**: Menu lateral com redes sociais
