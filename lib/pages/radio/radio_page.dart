@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:dio/dio.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:radio_player/radio_player.dart';
 // import 'package:vgs/controllers/old_radio_controller.dart';
 import 'package:vgs/configs/http_client_config.dart';
 import 'package:vgs/controllers/radio_controller.dart';
@@ -24,9 +25,56 @@ class _RadioPageState extends State<RadioPage> {
   String _currentSong = 'Carregando...';
   String _currentArtist = '';
   String? _albumArtUrl;
-  String? _albumArtLocalPath;
+  Uint8List? _streamArtworkBytes;
+  StreamSubscription<Metadata>? _metadataSub;
   Timer? _songTimer;
   final Dio _dio = Dio();
+
+  void _listenStreamMetadata() {
+    _metadataSub?.cancel();
+    _metadataSub = RadioPlayer.metadataStream.listen(
+      (Metadata m) {
+        if (!mounted) return;
+        final t = m.title?.trim() ?? '';
+        final a = m.artist?.trim() ?? '';
+        if (t.isEmpty && a.isEmpty) {
+          return;
+        }
+
+        final bytes = m.artworkData;
+        final icyUrl = m.artworkUrl?.trim() ?? '';
+
+        setState(() {
+          if (t.isNotEmpty) {
+            _currentSong = t;
+          }
+          if (a.isNotEmpty) {
+            _currentArtist = a;
+          }
+          if (bytes != null && bytes.isNotEmpty) {
+            _streamArtworkBytes = bytes;
+            _albumArtUrl = null;
+          } else if (icyUrl.isNotEmpty) {
+            _streamArtworkBytes = null;
+            _albumArtUrl = icyUrl;
+          }
+        });
+
+        // Fallback estilo iTune.js só se o nativo ainda não enviou capa
+        final hasArt =
+            (bytes != null && bytes.isNotEmpty) || icyUrl.isNotEmpty;
+        if (!hasArt) {
+          final q = a.isNotEmpty && t.isNotEmpty ? '$a - $t' : (t.isNotEmpty ? t : a);
+          if (q.isNotEmpty) {
+            _fetchAlbumArt(q);
+          }
+        }
+
+        _updateNotification();
+      },
+      onError: (_) {},
+    );
+  }
 
   @override
   void initState() {
@@ -34,13 +82,16 @@ class _RadioPageState extends State<RadioPage> {
     _dio.options.connectTimeout = const Duration(seconds: 12);
     _dio.options.receiveTimeout = const Duration(seconds: 15);
     _dio.options.headers = <String, dynamic>{
-      ...HttpClientConfig.androidLikeHeaders,
+      ...(Platform.isIOS
+          ? HttpClientConfig.iosSafariLikeHeaders
+          : HttpClientConfig.androidLikeHeaders),
     };
     // Força orientação portrait
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
+    _listenStreamMetadata();
     radioController.play();
     _updateStatus();
     _fetchCurrentSong();
@@ -166,6 +217,7 @@ class _RadioPageState extends State<RadioPage> {
         options: Options(
           responseType: ResponseType.plain,
           receiveTimeout: const Duration(seconds: 10),
+          headers: Map<String, dynamic>.from(HttpClientConfig.itunesSearchHeaders),
         ),
       );
       
@@ -211,6 +263,7 @@ class _RadioPageState extends State<RadioPage> {
           if (mounted) {
             setState(() {
               _albumArtUrl = null;
+              _streamArtworkBytes = null;
             });
           }
           return;
@@ -250,13 +303,10 @@ class _RadioPageState extends State<RadioPage> {
               
               if (mounted) {
                 setState(() {
+                  _streamArtworkBytes = null;
                   _albumArtUrl = artwork;
                 });
-                // Baixa e salva a imagem localmente para usar na notificação
-                await _downloadAndSaveAlbumArt(artwork);
-                // Aguarda um pouco antes de atualizar a notificação
                 await Future.delayed(const Duration(milliseconds: 100));
-                // Atualiza a notificação com os novos dados
                 _updateNotification();
               }
               return;
@@ -272,9 +322,7 @@ class _RadioPageState extends State<RadioPage> {
       if (mounted) {
         setState(() {
           _albumArtUrl = null;
-          _albumArtLocalPath = null;
         });
-        // Atualiza a notificação mesmo sem a capa
         _updateNotification();
       }
     } catch (e, stackTrace) {
@@ -284,9 +332,7 @@ class _RadioPageState extends State<RadioPage> {
       if (mounted) {
         setState(() {
           _albumArtUrl = null;
-          _albumArtLocalPath = null;
         });
-        // Atualiza a notificação mesmo com erro
         _updateNotification();
       }
     }
@@ -296,49 +342,6 @@ class _RadioPageState extends State<RadioPage> {
     setState(() {
       _isPlaying = radioController.isPlaying;
     });
-  }
-
-  // Baixa e salva a capa do álbum localmente
-  Future<void> _downloadAndSaveAlbumArt(String imageUrl) async {
-    try {
-      print('📥 Baixando capa do álbum: $imageUrl');
-      
-      // Obtém o diretório temporário
-      final directory = await getTemporaryDirectory();
-      final filePath = '${directory.path}/album_art_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      
-      // Baixa a imagem
-      final response = await _dio.get(
-        imageUrl,
-        options: Options(
-          responseType: ResponseType.bytes,
-          receiveTimeout: const Duration(seconds: 10),
-        ),
-      );
-      
-      if (response.statusCode == 200 && response.data != null) {
-        // Salva a imagem no arquivo
-        final file = File(filePath);
-        await file.writeAsBytes(response.data as List<int>);
-        
-        print('✅ Capa salva localmente: $filePath');
-        
-        if (mounted) {
-          setState(() {
-            _albumArtLocalPath = filePath;
-          });
-        }
-      }
-    } catch (e) {
-      print('❌ Erro ao baixar capa do álbum: $e');
-      if (mounted) {
-        setState(() {
-          _albumArtLocalPath = null;
-        });
-        // Atualiza a notificação mesmo se o download falhar
-        _updateNotification();
-      }
-    }
   }
 
   // Atualiza a notificação de mídia com os dados da música atual
@@ -353,15 +356,11 @@ class _RadioPageState extends State<RadioPage> {
           ? _currentArtist 
           : null;
       
-      // Atualiza a notificação através do controller
       await radioController.updateNotificationMetadata(
         title: title,
         subtitle: subtitle,
-        albumArtPath: _albumArtLocalPath,
+        artworkHttpUrl: _albumArtUrl,
       );
-      
-      print('📱 Notificação atualizada: $title ${subtitle != null ? '- $subtitle' : ''}');
-      print('📱 Capa na notificação: ${_albumArtLocalPath ?? "logo padrão"}');
     } catch (e) {
       print('❌ Erro ao atualizar notificação: $e');
     }
@@ -375,6 +374,7 @@ class _RadioPageState extends State<RadioPage> {
 
   @override
   void dispose() {
+    _metadataSub?.cancel();
     _songTimer?.cancel();
     radioController.pause();
     _dio.close();
@@ -460,11 +460,21 @@ class _RadioPageState extends State<RadioPage> {
                               'assets/images/ceresfm.png',
                               fit: BoxFit.cover,
                             ),
-                            // Capa do álbum (sobreposta quando disponível)
-                            if (_albumArtUrl != null && _albumArtUrl!.isNotEmpty)
+                            // Capa: bytes do stream (ICY + iTunes nativo) ou URL (iTunes / ICY)
+                            if (_streamArtworkBytes != null &&
+                                _streamArtworkBytes!.isNotEmpty)
+                              Image.memory(
+                                _streamArtworkBytes!,
+                                fit: BoxFit.cover,
+                                gaplessPlayback: true,
+                              )
+                            else if (_albumArtUrl != null &&
+                                _albumArtUrl!.isNotEmpty)
                               Image.network(
                                 _albumArtUrl!,
-                                headers: HttpClientConfig.androidLikeHeaders,
+                                headers: Platform.isIOS
+                                    ? HttpClientConfig.iosSafariLikeHeaders
+                                    : HttpClientConfig.androidLikeHeaders,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return const SizedBox.shrink();
@@ -497,6 +507,22 @@ class _RadioPageState extends State<RadioPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
+                    if (_currentArtist.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 40),
+                        child: Text(
+                          _currentArtist,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    if (_currentArtist.isNotEmpty) const SizedBox(height: 4),
                     // Nome da música/artista (fonte menor como na imagem)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 40),

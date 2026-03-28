@@ -23,7 +23,7 @@
 ### 4. **Integrações**
 - ✅ **Firebase Analytics**: Funciona no iOS
 - ✅ **Google Mobile Ads**: Funciona no iOS (requer configuração no AdMob)
-- ✅ **Radio Player**: `radio_player` package suporta iOS
+- ✅ **Radio Player**: `radio_player` package suporta iOS (ICY + `lookupOnlineArtwork` nativo, equivalente ao fluxo iTunes do WebView Android)
 - ✅ **Video Player**: `video_player` e `chewie` funcionam no iOS
 - ✅ **URL Launcher**: Abre links externos no iOS
 - ✅ **Share Plus**: Compartilhar funciona no iOS
