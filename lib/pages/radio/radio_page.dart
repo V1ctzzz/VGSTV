@@ -119,6 +119,87 @@ class _RadioPageState extends State<RadioPage> {
     return s == 'Música não identificada' || s == 'Música não disponível';
   }
 
+  /// Shoutcast v2: `stats?sid=1` → XML com `<SONGTITLE>...</SONGTITLE>`.
+  Future<String?> _songTitleFromShoutcastStats() async {
+    try {
+      final response = await _dio.get<String>(
+        RadioConfig.shoutcastStatsUrl,
+        options: Options(
+          responseType: ResponseType.plain,
+          receiveTimeout: const Duration(seconds: 12),
+        ),
+      );
+      if (response.statusCode != 200 || response.data == null) {
+        return null;
+      }
+      final m = RegExp(
+        r'<SONGTITLE>([^<]*)</SONGTITLE>',
+        caseSensitive: false,
+      ).firstMatch(response.data!);
+      if (m == null) {
+        return null;
+      }
+      final t = _stripHtmlTags(m.group(1) ?? '').trim();
+      return t.isEmpty ? null : t;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _deliverNowPlayingRaw(String raw) async {
+    if (!mounted || raw.isEmpty) {
+      return;
+    }
+
+    if (raw == _lastNowPlayingRaw) {
+      return;
+    }
+
+    if (_isInvalidNowPlayingMessage(raw)) {
+      if (!mounted) return;
+      _lastNowPlayingRaw = raw;
+      setState(() {
+        _currentSong = raw;
+        _currentArtist = '';
+        _albumArtUrl = null;
+        _streamArtworkBytes = null;
+      });
+      _updateNotification();
+      return;
+    }
+
+    _lastNowPlayingRaw = raw;
+
+    final cleaned = _cleanSongName(raw);
+    String? artist;
+    String? track;
+    if (cleaned.contains(' - ')) {
+      final parts = cleaned.split(' - ');
+      if (parts.length >= 2) {
+        artist = parts[0].trim();
+        track = parts.sublist(1).join(' - ').trim();
+      }
+    }
+
+    if (!mounted) return;
+    final displayTitle = track ?? cleaned;
+    final displayArtist = artist ?? '';
+    final previousLine = _currentSong;
+
+    setState(() {
+      _currentSong = displayTitle;
+      _currentArtist = displayArtist;
+    });
+
+    if (previousLine != displayTitle ||
+        (_albumArtUrl == null && _streamArtworkBytes == null)) {
+      _updateNotification();
+      await _fetchAlbumArt(raw);
+    } else {
+      _updateNotification();
+    }
+  }
+
   // Limpa o nome da música removendo informações extras
   String _cleanSongName(String songName) {
     // Remove informações entre parênteses (Bonus Track, UK_Jap_Oz_Nz, etc)
@@ -171,58 +252,18 @@ class _RadioPageState extends State<RadioPage> {
           continue;
         }
 
-        if (raw == _lastNowPlayingRaw) {
-          return;
-        }
-
-        if (_isInvalidNowPlayingMessage(raw)) {
-          if (!mounted) return;
-          _lastNowPlayingRaw = raw;
-          setState(() {
-            _currentSong = raw;
-            _currentArtist = '';
-            _albumArtUrl = null;
-            _streamArtworkBytes = null;
-          });
-          _updateNotification();
-          return;
-        }
-
-        _lastNowPlayingRaw = raw;
-
-        final cleaned = _cleanSongName(raw);
-        String? artist;
-        String? track;
-        if (cleaned.contains(' - ')) {
-          final parts = cleaned.split(' - ');
-          if (parts.length >= 2) {
-            artist = parts[0].trim();
-            track = parts.sublist(1).join(' - ').trim();
-          }
-        }
-
-        if (!mounted) return;
-        final displayTitle = track ?? cleaned;
-        final displayArtist = artist ?? '';
-        final previousLine = _currentSong;
-
-        setState(() {
-          _currentSong = displayTitle;
-          _currentArtist = displayArtist;
-        });
-
-        if (previousLine != displayTitle || (_albumArtUrl == null && _streamArtworkBytes == null)) {
-          _updateNotification();
-          // Mesmo termo de pesquisa que no iTune.js: string completa após remover HTML.
-          _fetchAlbumArt(raw);
-        } else {
-          _updateNotification();
-        }
+        await _deliverNowPlayingRaw(raw);
         return;
       } catch (e) {
         lastError = e;
         continue;
       }
+    }
+
+    final statsTitle = await _songTitleFromShoutcastStats();
+    if (statsTitle != null && statsTitle.isNotEmpty) {
+      await _deliverNowPlayingRaw(statsTitle);
+      return;
     }
 
     if (!mounted) return;

@@ -23,6 +23,11 @@ class RadioConfig {
   static const String nowPlayingFallbackUrl =
       'https://stm50.srvstm.com:11828/currentsong?sid=1';
 
+  /// Shoutcast v2 — XML com `<SONGTITLE>` (útil quando [nowPlayingFallbackUrl] vem vazio).
+  /// Painel do servidor: https://stm50.srvstm.com:11828/index.html?sid=1
+  static const String shoutcastStatsUrl =
+      'https://stm50.srvstm.com:11828/stats?sid=1';
+
   /// Intervalo do `setInterval` do iTune.js (10 s).
   static const Duration nowPlayingPollInterval = Duration(seconds: 10);
 
