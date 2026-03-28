@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Grupo Ceres de Comunicação — YouTube @canalgrupoceres (vídeos ativos). -->
+    <!-- VGSTV Esportes — https://www.youtube.com/@vgstv-esportes -->
     <!-- Ao alterar, copia o mesmo valor para iOS: ios/Runner/Info.plist → YoutubeChannelId -->
-    <string name="youtube_channel_id" translatable="false">UChYtmLWQYG6FOHaBtTfUX-Q</string>
+    <string name="youtube_channel_id" translatable="false">UC6uivo4INwe8uc5Fqf8srHw</string>
 </resources>

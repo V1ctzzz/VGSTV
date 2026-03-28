@@ -39,7 +39,8 @@ class YoutubeConfig {
   }
 
   /// Se o recurso nativo falhar (ex.: testes sem engine).
-  static const String _fallbackChannelId = 'UChYtmLWQYG6FOHaBtTfUX-Q';
+  /// Canal: https://www.youtube.com/@vgstv-esportes → UC6uivo4INwe8uc5Fqf8srHw
+  static const String _fallbackChannelId = 'UC6uivo4INwe8uc5Fqf8srHw';
 
   /// Chave **YouTube Data API v3**. No Google Cloud, permitir Android
   /// `com.vgstv.radioapp` e iOS `com.vgstv.playerplayer` na mesma chave, se

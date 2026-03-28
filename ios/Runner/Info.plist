@@ -49,7 +49,7 @@
 	<true/>
 	<!-- Mesmo valor que android/app/src/main/res/values/youtube.xml → youtube_channel_id -->
 	<key>YoutubeChannelId</key>
-	<string>UChYtmLWQYG6FOHaBtTfUX-Q</string>
+	<string>UC6uivo4INwe8uc5Fqf8srHw</string>
 	<!-- Espelha android:usesCleartextTraffic="true" (HTTP e redirects frágeis). -->
 	<key>NSAppTransportSecurity</key>
 	<dict>
