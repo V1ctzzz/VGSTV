@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:vgs/configs/http_client_config.dart';
 import 'package:vgs/entitys/entity_video.dart';
 
 class WidgetVideo extends StatelessWidget {
@@ -24,8 +25,28 @@ class WidgetVideo extends StatelessWidget {
             child: ListTile(
               leading: Image.network(
                 video.thumbnail,
+                headers: HttpClientConfig.androidLikeHeaders,
                 width: 100,
                 fit: BoxFit.fitWidth,
+                errorBuilder: (_, __, ___) => const SizedBox(
+                  width: 100,
+                  height: 56,
+                  child: Icon(Icons.play_circle_outline, size: 40),
+                ),
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return const SizedBox(
+                    width: 100,
+                    height: 56,
+                    child: Center(
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  );
+                },
               ),
               title: Text(
                 video.title,

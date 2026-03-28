@@ -33,6 +33,17 @@
 - ✅ **iTunes API**: Busca de capas de álbum funciona
 - ✅ **Shoutcast API**: Busca de música atual funciona
 - ✅ **HTTP Requests (Dio)**: Funciona no iOS
+- ✅ **YouTube Data API**: A lista de vídeos usa `channels` + `playlistItems` (playlist de uploads), não `activities` (que muitas vezes devolve lista vazia).
+
+**Referência Android (alinhamento com a build que já funciona):** pacote `com.vgstv.radioapp` em `android/app/build.gradle` e chave em `android/app/google-services.json`. **iOS** usa bundle `com.vgstv.playerplayer`. A chave **YouTube Data API** em `lib/configs/youtube_config.dart` deve estar na Google Cloud com restrições que cubram **as duas** (Android + iOS) ou, só para testes, sem restrição de aplicação.
+
+**Tráfego HTTP:** o Android tem `android:usesCleartextTraffic="true"`. No iOS foi adicionado `NSAppTransportSecurity` / `NSAllowsArbitraryLoads` em `ios/Runner/Info.plist` para comportamento equivalente.
+
+**User-Agent:** pedidos Dio e `Image.network` (capa da rádio, miniaturas YouTube) usam cabeçalhos estilo Chrome em Android (`lib/configs/http_client_config.dart`), para aproximar o comportamento da versão Android.
+
+**ID do canal YouTube:** a referência é **Android** — `android/app/src/main/res/values/youtube.xml` (`youtube_channel_id`). No **iOS**, mantém o mesmo valor em `Info.plist` → `YoutubeChannelId`. O Dart obtém o ID via `MethodChannel` (`com.vgstv.radioapp/config`); o fallback em `youtube_config.dart` só serve se o nativo falhar.
+
+**Ícone do app (iOS/Android):** após alterar `assets/images/logo_512.png`, regerar ícones com `dart run flutter_launcher_icons` (config em `pubspec.yaml` → `flutter_launcher_icons`). Para App Store, mantém `remove_alpha_ios: true`.
 
 ## ⚠️ Ajustes Necessários
 

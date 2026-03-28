@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Referência oficial do ID do canal YouTube (formato UC...). A app lê isto em runtime. -->
+    <!-- Ao alterar, copia o mesmo valor para iOS: ios/Runner/Info.plist → YoutubeChannelId -->
+    <string name="youtube_channel_id" translatable="false">UCQ_SaXk18SCkfsYw4bsJDnQ</string>
+</resources>

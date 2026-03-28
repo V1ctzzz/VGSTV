@@ -47,5 +47,14 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Mesmo valor que android/app/src/main/res/values/youtube.xml → youtube_channel_id -->
+	<key>YoutubeChannelId</key>
+	<string>UCQ_SaXk18SCkfsYw4bsJDnQ</string>
+	<!-- Espelha android:usesCleartextTraffic="true" (HTTP e redirects frágeis). -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

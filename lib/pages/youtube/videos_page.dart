@@ -14,12 +14,32 @@ class VideosPage extends StatefulWidget {
 class _VideosPageState extends State<VideosPage> {
   final _controllerYoutube = ControllerYoutube();
   List<EntityVideo> videos = <EntityVideo>[];
+  bool _loading = true;
+  String? _error;
 
   Future<void> _getVideos() async {
-    var lvideos = await _controllerYoutube.getVideos();
     setState(() {
-      videos = lvideos;
+      _loading = true;
+      _error = null;
     });
+    try {
+      final lvideos = await _controllerYoutube.getVideos();
+      if (!mounted) return;
+      setState(() {
+        videos = lvideos;
+        _loading = false;
+        if (lvideos.isEmpty) {
+          _error = 'Nenhum vídeo encontrado para este canal.';
+        }
+      });
+    } catch (e, _) {
+      if (!mounted) return;
+      setState(() {
+        videos = <EntityVideo>[];
+        _loading = false;
+        _error = e.toString().replaceFirst('Exception: ', '');
+      });
+    }
   }
 
   @override
@@ -74,17 +94,36 @@ class _VideosPageState extends State<VideosPage> {
           ),
         ),
         body: Padding(
-          padding: const EdgeInsets.fromLTRB(0, 20, 0, 20),
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
           child: Center(
-            child: videos.isEmpty
+            child: _loading
                 ? const CircularProgressIndicator()
-                : ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: videos.length,
-                    itemBuilder: (context, index) {
-                      return WidgetVideo(video: videos[index]);
-                    },
-                  ),
+                : _error != null
+                    ? ListView(
+                        children: [
+                          Text(
+                            _error!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          FilledButton.icon(
+                            onPressed: _getVideos,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Tentar novamente'),
+                          ),
+                        ],
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: videos.length,
+                        itemBuilder: (context, index) {
+                          return WidgetVideo(video: videos[index]);
+                        },
+                      ),
           ),
         ),
       ),

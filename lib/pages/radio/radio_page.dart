@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 // import 'package:vgs/controllers/old_radio_controller.dart';
+import 'package:vgs/configs/http_client_config.dart';
 import 'package:vgs/controllers/radio_controller.dart';
 import 'package:vgs/widgets/bannerad_widget.dart';
 import 'package:vgs/widgets/navbar.dart';
@@ -30,6 +31,11 @@ class _RadioPageState extends State<RadioPage> {
   @override
   void initState() {
     super.initState();
+    _dio.options.connectTimeout = const Duration(seconds: 12);
+    _dio.options.receiveTimeout = const Duration(seconds: 15);
+    _dio.options.headers = <String, dynamic>{
+      ...HttpClientConfig.androidLikeHeaders,
+    };
     // Força orientação portrait
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -84,47 +90,53 @@ class _RadioPageState extends State<RadioPage> {
       
       if (response.statusCode == 200 && response.data != null) {
         String songName = response.data.toString().trim();
-        if (songName.isNotEmpty) {
-          // Limpa o nome da música antes de exibir
-          final cleanedSongName = _cleanSongName(songName);
-          
-          // Tenta separar artista e música se vier no formato "Artista - Música"
-          String? artist;
-          String? track;
-          if (cleanedSongName.contains(' - ')) {
-            final parts = cleanedSongName.split(' - ');
-            if (parts.length >= 2) {
-              artist = parts[0].trim();
-              track = parts.sublist(1).join(' - ').trim();
-            }
-          }
-          
-          // Sempre atualiza e busca capa quando a música muda
-          if (mounted) {
-            final previousSong = _currentSong;
+        if (songName.isEmpty) {
+          if (mounted && _currentSong == 'Carregando...') {
             setState(() {
-              // Se conseguiu separar, usa o nome da música separado
-              // Caso contrário, usa o nome completo como música
-              _currentSong = track ?? cleanedSongName;
-              _currentArtist = artist ?? '';
+              _currentSong = 'Sem informação';
             });
-            // Buscar capa do álbum sempre que a música mudar ou na primeira vez
-            print('🎶 Música original: $songName');
-            print('🎶 Música limpa: $cleanedSongName (anterior: $previousSong)');
-            print('🎤 Artista separado: $artist');
-            print('🎵 Música separada: $track');
-            print('🖼️ Capa atual: $_albumArtUrl');
-            if (previousSong != (track ?? cleanedSongName) || _albumArtUrl == null) {
-              print('🔄 Buscando nova capa...');
-              // Atualiza a notificação imediatamente com os dados disponíveis
-              _updateNotification();
-              // Usa o nome limpo para buscar a capa (pode incluir artista)
-              _fetchAlbumArt(cleanedSongName);
-            } else {
-              print('⏭️ Mantendo capa atual');
-              // Atualiza a notificação mesmo se a música não mudou (caso os dados do iTunes tenham mudado)
-              _updateNotification();
-            }
+          }
+          return;
+        }
+        // Limpa o nome da música antes de exibir
+        final cleanedSongName = _cleanSongName(songName);
+
+        // Tenta separar artista e música se vier no formato "Artista - Música"
+        String? artist;
+        String? track;
+        if (cleanedSongName.contains(' - ')) {
+          final parts = cleanedSongName.split(' - ');
+          if (parts.length >= 2) {
+            artist = parts[0].trim();
+            track = parts.sublist(1).join(' - ').trim();
+          }
+        }
+
+        // Sempre atualiza e busca capa quando a música muda
+        if (mounted) {
+          final previousSong = _currentSong;
+          setState(() {
+            // Se conseguiu separar, usa o nome da música separado
+            // Caso contrário, usa o nome completo como música
+            _currentSong = track ?? cleanedSongName;
+            _currentArtist = artist ?? '';
+          });
+          // Buscar capa do álbum sempre que a música mudar ou na primeira vez
+          print('🎶 Música original: $songName');
+          print('🎶 Música limpa: $cleanedSongName (anterior: $previousSong)');
+          print('🎤 Artista separado: $artist');
+          print('🎵 Música separada: $track');
+          print('🖼️ Capa atual: $_albumArtUrl');
+          if (previousSong != (track ?? cleanedSongName) || _albumArtUrl == null) {
+            print('🔄 Buscando nova capa...');
+            // Atualiza a notificação imediatamente com os dados disponíveis
+            _updateNotification();
+            // Usa o nome limpo para buscar a capa (pode incluir artista)
+            _fetchAlbumArt(cleanedSongName);
+          } else {
+            print('⏭️ Mantendo capa atual');
+            // Atualiza a notificação mesmo se a música não mudou (caso os dados do iTunes tenham mudado)
+            _updateNotification();
           }
         }
       }
@@ -452,6 +464,7 @@ class _RadioPageState extends State<RadioPage> {
                             if (_albumArtUrl != null && _albumArtUrl!.isNotEmpty)
                               Image.network(
                                 _albumArtUrl!,
+                                headers: HttpClientConfig.androidLikeHeaders,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return const SizedBox.shrink();
