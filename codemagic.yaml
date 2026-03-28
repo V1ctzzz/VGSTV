@@ -30,7 +30,37 @@ workflows:
 
       - name: Build IPA
         script: |
-          flutter build ipa --release --export-options-plist=/Users/builder/export_options.plist
+          set -e
+          # CM_BUILD_ID é UUID, não serve como CFBundleVersion.
+          # CFBundleVersion = max(pubspec +N, PROJECT_BUILD_NUMBER, BUILD_NUMBER), com validação.
+          VER_RAW=$(grep -m1 '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*//;s/[[:space:]]+$//')
+          PUB=0
+          if echo "$VER_RAW" | grep -q '+'; then
+            PUB=$(echo "$VER_RAW" | sed -E 's/^[^+]*\+([0-9]+).*/\1/')
+          else
+            echo "WARNING: pubspec sem sufixo +N em version (ex.: 1.2.3+45). Usando 0 para comparar com counters do CI."
+          fi
+          if ! echo "$PUB" | grep -qxE '[0-9]+'; then
+            echo "WARNING: não foi possível ler o número após + em '$VER_RAW'; assumindo 0."
+            PUB=0
+          fi
+          PB=${PROJECT_BUILD_NUMBER:-0}
+          WF=${BUILD_NUMBER:-0}
+          case "$PB" in (*[!0-9]*) PB=0 ;; esac
+          case "$WF" in (*[!0-9]*) WF=0 ;; esac
+          BN=$PUB
+          [ "$PB" -gt "$BN" ] && BN=$PB
+          [ "$WF" -gt "$BN" ] && BN=$WF
+          if [ -z "$BN" ] || [ "$BN" = "0" ]; then
+            echo "WARNING: build number seria 0; usando timestamp unix. Prefira version: x.y.z+N no pubspec."
+            BN=$(date +%s)
+          fi
+          if ! echo "$BN" | grep -qxE '[1-9][0-9]*'; then
+            echo "ERRO: CFBundleVersion inválido após cálculo: '$BN'"
+            exit 1
+          fi
+          echo "Using iOS build number (CFBundleVersion): $BN (pubspec '$VER_RAW' => +$PUB, PROJECT_BUILD_NUMBER=$PB, BUILD_NUMBER=$WF)"
+          flutter build ipa --release --build-number="$BN" --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
